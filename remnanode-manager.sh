@@ -217,7 +217,7 @@ status_command() {
   printf "${BOLD}Sostoyanie konteynera${NC}\n"
   compose ps
   printf "\n${BOLD}Processy vnutri nody${NC}\n"
-  docker exec remnanode supervisorctl status 2>/dev/null || warn "Ne udalos poluchit supervisor status."
+  docker exec remnanode sh -lc 'ps -eo pid,comm,args | grep -E "[r]w-node|[r]w-core|[x]ray|dist/main.js"' 2>/dev/null || warn "Processy nody ne naydeny."
   printf "\n${BOLD}Resursy${NC}\n"
   docker stats --no-stream remnanode 2>/dev/null || true
   printf "\n${BOLD}Slushayushchie porty${NC}\n"
@@ -232,8 +232,8 @@ logs_command() {
   read -r -p "Vyberite: " choice
   case "$choice" in
     1) compose logs -f --tail=100 remnanode ;;
-    2) docker exec -it remnanode sh -lc 'tail -n 100 -f /var/log/supervisor/xray.err.log' ;;
-    3) docker exec -it remnanode sh -lc 'tail -n 100 -f /var/log/supervisor/xray.out.log' ;;
+    2) docker exec -it remnanode xerrors ;;
+    3) docker exec -it remnanode xlogs ;;
     4) compose logs --tail=200 remnanode ;;
     *) warn "Nevernyy punkt." ;;
   esac
