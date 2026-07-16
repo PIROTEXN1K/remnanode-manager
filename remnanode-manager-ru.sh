@@ -4,7 +4,7 @@ umask 077
 export LANG="C.UTF-8"
 export LC_ALL="C.UTF-8"
 
-VERSION="1.0.2 RU"
+VERSION="1.0.3 RU"
 APP_NAME="RemnaNode Manager"
 INSTALL_DIR="/opt/remnanode"
 BIN_PATH="/usr/local/bin/remnanode"
@@ -217,7 +217,7 @@ status_command() {
   printf "${BOLD}Состояние контейнера${NC}\n"
   compose ps
   printf "\n${BOLD}Процессы внутри ноды${NC}\n"
-  docker exec remnanode sh -lc 'ps -eo pid,comm,args | grep -E "[r]w-node|[r]w-core|[x]ray|dist/main.js"' 2>/dev/null || warn "Процессы ноды не найдены."
+  docker top remnanode -eo pid,comm,args 2>/dev/null || warn "Не удалось получить список процессов."
   printf "\n${BOLD}Ресурсы${NC}\n"
   docker stats --no-stream remnanode 2>/dev/null || true
   printf "\n${BOLD}Слушающие порты${NC}\n"
