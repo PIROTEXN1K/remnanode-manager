@@ -17,10 +17,10 @@ info() { printf "${GREEN}[+]${NC} %s\n" "$*"; }
 warn() { printf "${YELLOW}[!]${NC} %s\n" "$*" >&2; }
 error() { printf "${RED}[x]${NC} %s\n" "$*" >&2; }
 die() { error "$*"; exit 1; }
-pause() { [[ -t 0 ]] && read -r -p "Нажмите Enter для продолжения..." _ || true; }
-need_root() { [[ ${EUID} -eq 0 ]] || die "Запустите команду от root или через sudo."; }
+pause() { [[ -t 0 ]] && read -r -p "Nazhmite Enter dlya prodolzheniya..." _ || true; }
+need_root() { [[ ${EUID} -eq 0 ]] || die "Zapustite komandu ot root ili cherez sudo."; }
 installed() { [[ -f "$INSTALL_DIR/docker-compose.yml" && -f "$INSTALL_DIR/.env" ]]; }
-need_install() { installed || die "Нода не установлена. Сначала выберите пункт установки."; }
+need_install() { installed || die "Noda ne ustanovlena. Snachala vyberite punkt ustanovki."; }
 compose() { (cd "$INSTALL_DIR" && docker compose "$@"); }
 
 header() {
@@ -33,7 +33,7 @@ header() {
 confirm() {
   local prompt="$1" answer
   read -r -p "$prompt [y/N]: " answer
-  [[ "$answer" =~ ^[YyДд]$ ]]
+  [[ "$answer" =~ ^[Yy]$ ]]
 }
 
 validate_port() { [[ "$1" =~ ^[0-9]+$ ]] && ((10#$1 >= 1 && 10#$1 <= 65535)); }
@@ -48,14 +48,14 @@ detect_ssh_port() {
 
 install_packages() {
   export DEBIAN_FRONTEND=noninteractive
-  info "Обновление списка пакетов..."
+  info "Obnovlenie spiska paketov..."
   apt-get update -qq
   apt-get install -y -qq ca-certificates curl nftables ufw fail2ban unattended-upgrades jq
   if ! command -v docker >/dev/null 2>&1; then
-    info "Установка Docker..."
+    info "Ustanovka Docker..."
     curl -fsSL https://get.docker.com | sh
   fi
-  docker compose version >/dev/null 2>&1 || die "Docker Compose V2 не найден."
+  docker compose version >/dev/null 2>&1 || die "Docker Compose V2 ne nayden."
   systemctl enable --now docker
 }
 
@@ -109,7 +109,7 @@ load_manager_config() {
 configure_firewall() {
   local ssh_port rule port proto
   ssh_port="$(detect_ssh_port)"
-  info "Настройка firewall. SSH-порт ${ssh_port} останется доступен."
+  info "Nastroyka firewall. SSH-port ${ssh_port} ostanetsya dostupen."
   ufw default deny incoming >/dev/null
   ufw default allow outgoing >/dev/null
   ufw allow "${ssh_port}/tcp" comment 'SSH' >/dev/null
@@ -150,32 +150,32 @@ net.ipv4.tcp_mtu_probing=1
 fs.file-max=2097152
 EOF
   sysctl --system >/dev/null
-  info "BBR и безопасные сетевые параметры применены."
+  info "BBR i bezopasnye setevye parametry primeneny."
   printf 'TCP congestion control: '; sysctl -n net.ipv4.tcp_congestion_control
 }
 
 install_command() {
   need_root
   if installed; then
-    warn "Нода уже установлена в $INSTALL_DIR."
-    confirm "Переустановить с сохранением резервной копии настроек?" || return 0
+    warn "Noda uzhe ustanovlena v $INSTALL_DIR."
+    confirm "Pereustanovit s sohraneniem rezervnoy kopii nastroek?" || return 0
     cp -a "$INSTALL_DIR" "${INSTALL_DIR}.backup-$(date +%Y%m%d-%H%M%S)"
     compose down || true
   fi
 
   local secret
   header
-  printf "${BOLD}Установка Remnawave Node${NC}\n\n"
-  read -r -p "Публичный IP сервера панели: " PANEL_IP
-  validate_source "$PANEL_IP" || die "Некорректный IP панели."
-  read -r -p "Порт Node API [${DEFAULT_NODE_PORT}]: " NODE_PORT
+  printf "${BOLD}Ustanovka Remnawave Node${NC}\n\n"
+  read -r -p "Publichnyy IP servera paneli: " PANEL_IP
+  validate_source "$PANEL_IP" || die "Nekorrektnyy IP paneli."
+  read -r -p "Port Node API [${DEFAULT_NODE_PORT}]: " NODE_PORT
   NODE_PORT="${NODE_PORT:-$DEFAULT_NODE_PORT}"
-  validate_port "$NODE_PORT" || die "Некорректный порт Node API."
-  read -r -p "Клиентские порты [${DEFAULT_CLIENT_PORTS}]: " CLIENT_PORTS
+  validate_port "$NODE_PORT" || die "Nekorrektnyy port Node API."
+  read -r -p "Klientskie porty [${DEFAULT_CLIENT_PORTS}]: " CLIENT_PORTS
   CLIENT_PORTS="${CLIENT_PORTS:-$DEFAULT_CLIENT_PORTS}"
-  validate_port_list "$CLIENT_PORTS" || die "Формат: 443/tcp или 443/tcp,8443/udp"
-  read -r -s -p "SECRET_KEY из Remnawave Panel: " secret; printf '\n'
-  [[ ${#secret} -ge 16 && "$secret" != *$'\n'* ]] || die "SECRET_KEY выглядит некорректно."
+  validate_port_list "$CLIENT_PORTS" || die "Format: 443/tcp ili 443/tcp,8443/udp"
+  read -r -s -p "SECRET_KEY iz Remnawave Panel: " secret; printf '\n'
+  [[ ${#secret} -ge 16 && "$secret" != *$'\n'* ]] || die "SECRET_KEY vyglyadit nekorrektno."
 
   install_packages
   write_compose
@@ -187,20 +187,20 @@ install_command() {
   apply_optimization
   install -m 755 "${BASH_SOURCE[0]}" "$BIN_PATH"
 
-  info "Загрузка и запуск ноды..."
+  info "Zagruzka i zapusk nody..."
   compose pull
   compose up -d --remove-orphans
   sleep 3
   status_command
-  printf '\n${GREEN}${BOLD}Установка завершена.${NC}\n'
-  printf 'Теперь добавьте ноду в панели: адрес VDS, порт %s.\n' "$NODE_PORT"
+  printf '\n${GREEN}${BOLD}Ustanovka zavershena.${NC}\n'
+  printf 'Teper dobavte nodu v paneli: adres VDS, port %s.\n' "$NODE_PORT"
 }
 
 update_command() {
   need_root; need_install
-  info "Создаю резервную копию конфигурации..."
+  info "Sozdayu rezervnuyu kopiyu konfiguracii..."
   tar -czf "/root/remnanode-config-$(date +%Y%m%d-%H%M%S).tar.gz" -C /opt remnanode
-  info "Обновляю образ Remnawave Node..."
+  info "Obnovlyayu obraz Remnawave Node..."
   compose pull
   compose up -d --remove-orphans
   docker image prune -f >/dev/null
@@ -208,34 +208,34 @@ update_command() {
 }
 
 up_command() { need_root; need_install; compose up -d; status_command; }
-down_command() { need_root; need_install; compose down; info "Нода остановлена."; }
+down_command() { need_root; need_install; compose down; info "Noda ostanovlena."; }
 restart_command() { need_root; need_install; compose restart; sleep 2; status_command; }
 
 status_command() {
   need_install
   header
-  printf "${BOLD}Состояние контейнера${NC}\n"
+  printf "${BOLD}Sostoyanie konteynera${NC}\n"
   compose ps
-  printf "\n${BOLD}Процессы внутри ноды${NC}\n"
-  docker exec remnanode supervisorctl status 2>/dev/null || warn "Не удалось получить supervisor status."
-  printf "\n${BOLD}Ресурсы${NC}\n"
+  printf "\n${BOLD}Processy vnutri nody${NC}\n"
+  docker exec remnanode supervisorctl status 2>/dev/null || warn "Ne udalos poluchit supervisor status."
+  printf "\n${BOLD}Resursy${NC}\n"
   docker stats --no-stream remnanode 2>/dev/null || true
-  printf "\n${BOLD}Слушающие порты${NC}\n"
+  printf "\n${BOLD}Slushayushchie porty${NC}\n"
   load_manager_config
-  ss -lntup | grep -E ":(${NODE_PORT}|443|80|61000)\\b" || warn "Ожидаемые порты не найдены."
+  ss -lntup | grep -E ":(${NODE_PORT}|443|80|61000)\\b" || warn "Ozhidaemye porty ne naydeny."
 }
 
 logs_command() {
   need_install
   local choice
-  printf '1) Общий журнал ноды\n2) Ошибки Xray\n3) Журнал Xray\n4) Последние 200 строк без слежения\n'
-  read -r -p "Выберите: " choice
+  printf '1) Obshchiy zhurnal nody\n2) Oshibki Xray\n3) Zhurnal Xray\n4) Poslednie 200 strok bez slezheniya\n'
+  read -r -p "Vyberite: " choice
   case "$choice" in
     1) compose logs -f --tail=100 remnanode ;;
     2) docker exec -it remnanode sh -lc 'tail -n 100 -f /var/log/supervisor/xray.err.log' ;;
     3) docker exec -it remnanode sh -lc 'tail -n 100 -f /var/log/supervisor/xray.out.log' ;;
     4) compose logs --tail=200 remnanode ;;
-    *) warn "Неверный пункт." ;;
+    *) warn "Nevernyy punkt." ;;
   esac
 }
 
@@ -243,31 +243,31 @@ diagnose_command() {
   need_install
   load_manager_config
   header
-  printf "${BOLD}Диагностика Remnawave Node${NC}\n\n"
-  printf 'Время: '; date
+  printf "${BOLD}Diagnostika Remnawave Node${NC}\n\n"
+  printf 'Vremya: '; date
   printf 'Uptime: '; uptime -p
-  printf 'Публичный IPv4: '; curl -4fsS --max-time 8 https://ifconfig.me || printf 'не определён'; printf '\n'
+  printf 'Publichnyy IPv4: '; curl -4fsS --max-time 8 https://ifconfig.me || printf 'ne opredelen'; printf '\n'
   printf 'DNS: '; getent ahostsv4 google.com | head -n1 || true
-  printf 'Интернет по IP: '; ping -c 1 -W 2 1.1.1.1 >/dev/null && echo OK || echo FAIL
+  printf 'Internet po IP: '; ping -c 1 -W 2 1.1.1.1 >/dev/null && echo OK || echo FAIL
   printf 'HTTPS: '; curl -4fsSI --max-time 8 https://www.google.com >/dev/null && echo OK || echo FAIL
   printf 'Docker: '; systemctl is-active docker || true
-  printf 'Контейнер: '; docker inspect remnanode --format '{{.State.Status}}, restarts={{.RestartCount}}' 2>/dev/null || echo FAIL
+  printf 'Konteyner: '; docker inspect remnanode --format '{{.State.Status}}, restarts={{.RestartCount}}' 2>/dev/null || echo FAIL
   printf 'Node API %s: ' "$NODE_PORT"; ss -lnt | grep -qE ":${NODE_PORT}\\b" && echo LISTEN || echo CLOSED
   printf 'BBR: '; sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || true
   printf '\n${BOLD}Firewall${NC}\n'; ufw status | tail -n 30
-  printf '\n${BOLD}Последние ошибки${NC}\n'
-  docker logs --tail=300 remnanode 2>&1 | grep -Ei 'error|failed|fatal|panic|refused|timeout|invalid' | tail -n 30 || echo 'Критических ошибок не найдено.'
+  printf '\n${BOLD}Poslednie oshibki${NC}\n'
+  docker logs --tail=300 remnanode 2>&1 | grep -Ei 'error|failed|fatal|panic|refused|timeout|invalid' | tail -n 30 || echo 'Kriticheskih oshibok ne naydeno.'
 }
 
 firewall_command() {
   need_root; load_manager_config
-  printf '1) Показать правила\n2) Применить безопасные правила заново\n3) Разблокировать IP в Fail2Ban\n'
-  read -r -p "Выберите: " choice
+  printf '1) Pokazat pravila\n2) Primenit bezopasnye pravila zanovo\n3) Razblokirovat IP v Fail2Ban\n'
+  read -r -p "Vyberite: " choice
   case "$choice" in
     1) ufw status numbered; fail2ban-client status sshd 2>/dev/null || true ;;
-    2) configure_firewall; info "Правила применены." ;;
-    3) read -r -p "IP для разблокировки: " ip; validate_source "$ip" || die "Некорректный IP"; fail2ban-client set sshd unbanip "$ip" || true ;;
-    *) warn "Неверный пункт." ;;
+    2) configure_firewall; info "Pravila primeneny." ;;
+    3) read -r -p "IP dlya razblokirovki: " ip; validate_source "$ip" || die "Nekorrektnyy IP"; fail2ban-client set sshd unbanip "$ip" || true ;;
+    *) warn "Nevernyy punkt." ;;
   esac
 }
 
@@ -276,7 +276,7 @@ backup_command() {
   local file="/root/remnanode-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
   tar -czf "$file" -C /opt remnanode
   chmod 600 "$file"
-  info "Резервная копия: $file"
+  info "Rezervnaya kopiya: $file"
 }
 
 auto_restart_command() {
@@ -305,45 +305,45 @@ EOF
 
 uninstall_command() {
   need_root
-  confirm "Удалить контейнер и файлы ноды? Резервная копия будет сохранена" || return 0
+  confirm "Udalit konteyner i fayly nody? Rezervnaya kopiya budet sohranena" || return 0
   if installed; then backup_command; compose down || true; fi
   rm -rf -- "$INSTALL_DIR"
   rm -f -- "$CONFIG_FILE" "$BIN_PATH"
   systemctl disable --now remnanode-restart.timer 2>/dev/null || true
   rm -f /etc/systemd/system/remnanode-restart.{service,timer}
   systemctl daemon-reload
-  info "Remnawave Node удалена. Docker, UFW и системная защита оставлены."
+  info "Remnawave Node udalena. Docker, UFW i sistemnaya zashchita ostavleny."
 }
 
 menu() {
   need_root
   while true; do
     header
-    if installed; then printf "Статус установки: ${GREEN}УСТАНОВЛЕНА${NC}\n\n"; else printf "Статус установки: ${YELLOW}НЕ УСТАНОВЛЕНА${NC}\n\n"; fi
+    if installed; then printf "Status ustanovki: ${GREEN}USTANOVLENA${NC}\n\n"; else printf "Status ustanovki: ${YELLOW}NE USTANOVLENA${NC}\n\n"; fi
     cat <<'EOF'
-  1) Установить или переустановить ноду
-  2) Статус ноды
-  3) Запустить ноду
-  4) Остановить ноду
-  5) Перезапустить ноду
-  6) Обновить ноду
-  7) Посмотреть журналы
-  8) Полная диагностика
-  9) Firewall и Fail2Ban
- 10) Применить оптимизацию BBR
- 11) Создать резервную копию
- 12) Еженедельный автоперезапуск
- 13) Удалить ноду
-  0) Выход
+  1) Ustanovit ili pereustanovit nodu
+  2) Status nody
+  3) Zapustit nodu
+  4) Ostanovit nodu
+  5) Perezapustit nodu
+  6) Obnovit nodu
+  7) Posmotret zhurnaly
+  8) Polnaya diagnostika
+  9) Firewall i Fail2Ban
+ 10) Primenit optimizaciyu BBR
+ 11) Sozdat rezervnuyu kopiyu
+ 12) Ezhenedelnyy avtoperezapusk
+ 13) Udalit nodu
+  0) Vyhod
 EOF
     printf '\n'
-    read -r -p "Выберите действие: " choice
+    read -r -p "Vyberite deystvie: " choice
     case "$choice" in
       1) install_command ;; 2) status_command ;; 3) up_command ;; 4) down_command ;;
       5) restart_command ;; 6) update_command ;; 7) logs_command ;; 8) diagnose_command ;;
       9) firewall_command ;; 10) apply_optimization ;; 11) backup_command ;;
       12) auto_restart_command ;; 13) uninstall_command ;; 0) exit 0 ;;
-      *) warn "Неверный пункт." ;;
+      *) warn "Nevernyy punkt." ;;
     esac
     pause
   done
@@ -352,10 +352,10 @@ EOF
 usage() {
   cat <<EOF
 $APP_NAME v$VERSION
-Использование: remnanode [команда]
+Ispolzovanie: remnanode [komanda]
 
-Без команды открывается русское меню.
-Команды: install, status, up, down, restart, update, logs, diagnose,
+Bez komandy otkryvaetsya menyu.
+Komandy: install, status, up, down, restart, update, logs, diagnose,
          firewall, optimize, backup, auto-restart, uninstall, help
 EOF
 }
