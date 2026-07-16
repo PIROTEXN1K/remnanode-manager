@@ -4,7 +4,7 @@ umask 077
 export LANG="C.UTF-8"
 export LC_ALL="C.UTF-8"
 
-VERSION="1.0.3 RU"
+VERSION="1.0.4 RU"
 APP_NAME="RemnaNode Manager"
 INSTALL_DIR="/opt/remnanode"
 BIN_PATH="/usr/local/bin/remnanode"
