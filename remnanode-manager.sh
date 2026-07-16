@@ -217,7 +217,7 @@ status_command() {
   printf "${BOLD}Sostoyanie konteynera${NC}\n"
   compose ps
   printf "\n${BOLD}Processy vnutri nody${NC}\n"
-  docker exec remnanode sh -lc 'ps -eo pid,comm,args | grep -E "[r]w-node|[r]w-core|[x]ray|dist/main.js"' 2>/dev/null || warn "Processy nody ne naydeny."
+  docker top remnanode -eo pid,comm,args 2>/dev/null || warn "Ne udalos poluchit spisok processov."
   printf "\n${BOLD}Resursy${NC}\n"
   docker stats --no-stream remnanode 2>/dev/null || true
   printf "\n${BOLD}Slushayushchie porty${NC}\n"
