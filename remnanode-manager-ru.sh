@@ -4,7 +4,7 @@ umask 077
 export LANG="C.UTF-8"
 export LC_ALL="C.UTF-8"
 
-VERSION="1.0.1 RU"
+VERSION="1.0.2 RU"
 APP_NAME="RemnaNode Manager"
 INSTALL_DIR="/opt/remnanode"
 BIN_PATH="/usr/local/bin/remnanode"
@@ -217,7 +217,7 @@ status_command() {
   printf "${BOLD}Состояние контейнера${NC}\n"
   compose ps
   printf "\n${BOLD}Процессы внутри ноды${NC}\n"
-  docker exec remnanode supervisorctl status 2>/dev/null || warn "Не удалось получить supervisor status."
+  docker exec remnanode sh -lc 'ps -eo pid,comm,args | grep -E "[r]w-node|[r]w-core|[x]ray|dist/main.js"' 2>/dev/null || warn "Процессы ноды не найдены."
   printf "\n${BOLD}Ресурсы${NC}\n"
   docker stats --no-stream remnanode 2>/dev/null || true
   printf "\n${BOLD}Слушающие порты${NC}\n"
@@ -232,8 +232,8 @@ logs_command() {
   read -r -p "Выберите: " choice
   case "$choice" in
     1) compose logs -f --tail=100 remnanode ;;
-    2) docker exec -it remnanode sh -lc 'tail -n 100 -f /var/log/supervisor/xray.err.log' ;;
-    3) docker exec -it remnanode sh -lc 'tail -n 100 -f /var/log/supervisor/xray.out.log' ;;
+    2) docker exec -it remnanode xerrors ;;
+    3) docker exec -it remnanode xlogs ;;
     4) compose logs --tail=200 remnanode ;;
     *) warn "Неверный пункт." ;;
   esac
